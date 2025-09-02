@@ -1,0 +1,70 @@
+# Three-Layer AI Framework Dependencies
+# Production-ready enterprise AI implementation requirements
+
+# Core Python dependencies
+python-dotenv>=0.19.0
+pydantic>=1.10.0
+requests>=2.28.0
+python-dateutil>=2.8.2
+pytz>=2022.1
+
+# Data manipulation and analysis (Layer 2)
+pandas>=1.5.0
+numpy>=1.21.0
+scipy>=1.9.0
+
+# Machine Learning and AI (All Layers)
+scikit-learn>=1.1.0
+statsmodels>=0.13.0
+
+# Time series forecasting (Layer 3)
+prophet>=1.1.0
+
+# Azure AI and Microsoft ecosystem integration
+azure-ai-ml>=1.0.0
+azure-identity>=1.12.0
+azure-core>=1.26.0
+azure-openai>=1.0.0
+
+# OpenAI and AI model integration
+openai>=1.0.0
+
+# Web framework and APIs (Layer 1)
+fastapi>=0.95.0
+uvicorn>=0.20.0
+streamlit>=1.20.0
+
+# Visualization and dashboard generation (All Layers)
+plotly>=5.10.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Microsoft Semantic Kernel integration
+semantic-kernel>=0.5.0
+
+# Graph databases and knowledge graphs (Layer 2)
+neo4j>=5.0.0
+networkx>=2.8.0
+
+# Vector databases for RAG (Layer 1)
+chromadb>=0.4.0
+faiss-cpu>=1.7.0
+
+# Document processing (Layer 1)
+langchain>=0.0.200
+pypdf2>=3.0.0
+python-docx>=0.8.11
+
+# Infrastructure as Code
+azure-mgmt-resource>=20.0.0
+azure-mgmt-containerinstance>=10.0.0
+
+# Development and testing
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
+mypy>=1.0.0
+
+# Monitoring and observability
+prometheus-client>=0.15.0
+azure-monitor-opentelemetry>=1.0.0
