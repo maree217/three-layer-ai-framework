@@ -3,6 +3,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-v3.9+-blue.svg)](https://www.python.org/)
 [![Azure](https://img.shields.io/badge/Azure-AI%20Ready-0078D4)](https://azure.microsoft.com/)
+[![GitHub stars](https://img.shields.io/github/stars/maree217/three-layer-ai-framework?style=social)](https://github.com/maree217/three-layer-ai-framework/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/maree217/three-layer-ai-framework?style=social)](https://github.com/maree217/three-layer-ai-framework/network/members)
+[![GitHub last commit](https://img.shields.io/github/last-commit/maree217/three-layer-ai-framework)](https://github.com/maree217/three-layer-ai-framework/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/maree217/three-layer-ai-framework)](https://github.com/maree217/three-layer-ai-framework/issues)
 
 ## 🚀 Production-Ready Enterprise AI in 30 Days
 
