@@ -1,0 +1,107 @@
+# Azure Container Apps Deployment Configuration
+# Deploy the Three-Layer AI Framework to Azure Container Apps
+
+apiVersion: 2022-03-01
+location: eastus
+name: three-layer-ai-app
+resourceGroup: three-layer-ai-rg
+
+properties:
+  managedEnvironmentId: /subscriptions/{subscription-id}/resourceGroups/three-layer-ai-rg/providers/Microsoft.App/managedEnvironments/three-layer-env
+
+  configuration:
+    ingress:
+      external: true
+      targetPort: 8000
+      transport: auto
+      traffic:
+        - weight: 100
+          latestRevision: true
+
+    secrets:
+      - name: azure-openai-key
+        value: YOUR_AZURE_OPENAI_KEY
+      - name: azure-openai-endpoint
+        value: YOUR_AZURE_OPENAI_ENDPOINT
+      - name: database-connection
+        value: YOUR_DATABASE_CONNECTION_STRING
+
+    registries:
+      - server: yourregistry.azurecr.io
+        username: YOUR_ACR_USERNAME
+        passwordSecretRef: acr-password
+
+  template:
+    containers:
+      - name: three-layer-ai
+        image: yourregistry.azurecr.io/three-layer-ai:latest
+
+        resources:
+          cpu: 1.0
+          memory: 2Gi
+
+        env:
+          - name: AZURE_OPENAI_ENDPOINT
+            secretRef: azure-openai-endpoint
+          - name: AZURE_OPENAI_API_KEY
+            secretRef: azure-openai-key
+          - name: AZURE_OPENAI_DEPLOYMENT_NAME
+            value: gpt-4
+          - name: DATABASE_CONNECTION_STRING
+            secretRef: database-connection
+          - name: ENVIRONMENT
+            value: production
+          - name: LOG_LEVEL
+            value: INFO
+
+        probes:
+          liveness:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+
+          readiness:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+    scale:
+      minReplicas: 1
+      maxReplicas: 10
+      rules:
+        - name: http-scaling
+          http:
+            metadata:
+              concurrentRequests: '100'
+
+# Deployment Instructions:
+#
+# 1. Create Resource Group:
+#    az group create --name three-layer-ai-rg --location eastus
+#
+# 2. Create Container Apps Environment:
+#    az containerapp env create \
+#      --name three-layer-env \
+#      --resource-group three-layer-ai-rg \
+#      --location eastus
+#
+# 3. Build and Push Docker Image:
+#    docker build -t yourregistry.azurecr.io/three-layer-ai:latest .
+#    docker push yourregistry.azurecr.io/three-layer-ai:latest
+#
+# 4. Deploy Container App:
+#    az containerapp create \
+#      --name three-layer-ai-app \
+#      --resource-group three-layer-ai-rg \
+#      --environment three-layer-env \
+#      --yaml azure-container.yml
+#
+# 5. Get the Application URL:
+#    az containerapp show \
+#      --name three-layer-ai-app \
+#      --resource-group three-layer-ai-rg \
+#      --query properties.configuration.ingress.fqdn

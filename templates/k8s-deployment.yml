@@ -1,0 +1,217 @@
+# Kubernetes Deployment Configuration
+# Deploy the Three-Layer AI Framework to Kubernetes
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: three-layer-ai
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: three-layer-secrets
+  namespace: three-layer-ai
+type: Opaque
+stringData:
+  azure-openai-key: YOUR_AZURE_OPENAI_KEY
+  azure-openai-endpoint: YOUR_AZURE_OPENAI_ENDPOINT
+  database-connection: YOUR_DATABASE_CONNECTION_STRING
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: three-layer-config
+  namespace: three-layer-ai
+data:
+  AZURE_OPENAI_DEPLOYMENT_NAME: "gpt-4"
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-ada-002"
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  MAX_TOKENS: "1000"
+  TEMPERATURE: "0.7"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: three-layer-ai
+  namespace: three-layer-ai
+  labels:
+    app: three-layer-ai
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: three-layer-ai
+  template:
+    metadata:
+      labels:
+        app: three-layer-ai
+    spec:
+      containers:
+      - name: three-layer-ai
+        image: yourregistry.azurecr.io/three-layer-ai:latest
+        imagePullPolicy: Always
+
+        ports:
+        - containerPort: 8000
+          name: http
+
+        env:
+        - name: AZURE_OPENAI_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: three-layer-secrets
+              key: azure-openai-endpoint
+        - name: AZURE_OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: three-layer-secrets
+              key: azure-openai-key
+        - name: DATABASE_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: three-layer-secrets
+              key: database-connection
+
+        envFrom:
+        - configMapRef:
+            name: three-layer-config
+
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+      imagePullSecrets:
+      - name: acr-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: three-layer-ai-service
+  namespace: three-layer-ai
+spec:
+  type: LoadBalancer
+  selector:
+    app: three-layer-ai
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+    name: http
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: three-layer-ai-hpa
+  namespace: three-layer-ai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: three-layer-ai
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: three-layer-ai-ingress
+  namespace: three-layer-ai
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - your-domain.com
+    secretName: three-layer-ai-tls
+  rules:
+  - host: your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: three-layer-ai-service
+            port:
+              number: 80
+
+# Deployment Instructions:
+#
+# 1. Create AKS Cluster (if needed):
+#    az aks create \
+#      --resource-group three-layer-ai-rg \
+#      --name three-layer-aks \
+#      --node-count 3 \
+#      --enable-managed-identity \
+#      --generate-ssh-keys
+#
+# 2. Get AKS Credentials:
+#    az aks get-credentials \
+#      --resource-group three-layer-ai-rg \
+#      --name three-layer-aks
+#
+# 3. Create Docker Registry Secret:
+#    kubectl create secret docker-registry acr-secret \
+#      --namespace three-layer-ai \
+#      --docker-server=yourregistry.azurecr.io \
+#      --docker-username=YOUR_ACR_USERNAME \
+#      --docker-password=YOUR_ACR_PASSWORD
+#
+# 4. Update Secrets in this file with actual values
+#
+# 5. Apply the Configuration:
+#    kubectl apply -f k8s-deployment.yml
+#
+# 6. Check Deployment Status:
+#    kubectl get pods -n three-layer-ai
+#    kubectl get services -n three-layer-ai
+#
+# 7. Get External IP:
+#    kubectl get service three-layer-ai-service -n three-layer-ai
+#
+# 8. View Logs:
+#    kubectl logs -f deployment/three-layer-ai -n three-layer-ai
